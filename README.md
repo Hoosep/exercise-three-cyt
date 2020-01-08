@@ -1,5 +1,3 @@
-# Project unfinished
-
 # exercise-two-cyt
 You must install all dependencies from root directory and client folder.
 
