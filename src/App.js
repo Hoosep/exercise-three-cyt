@@ -1,167 +1,183 @@
 import React, { Component, Fragment } from 'react';
-import { Form, Row, Col, Icon, Button, Radio, InputNumber } from 'antd';
+import { Form, Row, Col, Icon, Button, Radio, Input } from 'antd';
 import './App.css';
 
-let id = 0;
+const FormItem = Form.Item;
 
+let uuid = 0;
 class App extends Component {
   state = {
-    numbers: []
+    totalOperation: null
   }
 
-  remove = k => {
+  addNumber = () => {
     const { form } = this.props;
-    const keys = form.getFieldValue('keys');
-    form.setFieldsValue({
-      keys: keys.filter(key => key !== k),
-    });
-  };
+    const numbers = form.getFieldValue("newnumbers");
+    const nextNumber = numbers.concat(uuid);
+    uuid++;
 
-  add = () => {
-    const { form } = this.props;
-    const keys = form.getFieldValue('keys');
-    const nextKeys = keys.concat(id++);
     form.setFieldsValue({
-      keys: nextKeys,
+      newnumbers: nextNumber
     });
-  };
+  }
 
-  handleSubmit = async e => {
+  handleSubmit = e => {
     e.preventDefault();
-    const { form } = this.props;
-    const keys = form.getFieldValue('keys');
-    form.validateFields((err, values) => {
-      if (!err) {
-        const { names:numbers } = values;
+    const { validateFields } = this.props.form;
 
+    validateFields((err, values) => {
+      if(!err){
+        const { getFieldValue } = this.props.form;
+        let totalItems = getFieldValue('newnumbers');
+        let totalOperation = 0;
+        totalItems.map((k, index) => {
+          const actualNumber = parseFloat(getFieldValue(`number${k}`));
+          const actualRadioGroup = getFieldValue(`radio-group${k}`);
+  
+          switch (actualRadioGroup) {
+            case "1":
+              totalOperation += actualNumber;
+              break;
+            case "2":
+              totalOperation -= actualNumber;
+              break;
+            case "3":
+              totalOperation *= actualNumber;
+              break;
+            default:
+              break;
+          }
+        });
+  
+        this.setState({
+          totalOperation
+        })
       }
     });
-  };
 
-  handleOnChange = e => {
-    const { form } = this.props;
-    /* form.validateFields((err, values) => {
-      const { names:numbers } = values;
-      this.setState({
-        numbers
-      })
-    }) */
   }
 
-  disabledButton = e => {
-    e.target.disabled = true;
-    console.log(e.target);
+  handleClickRemoveNumberRight = e => {
+    const { setFieldsValue } = this.props.form;
+    const radioGroupIndex = e.target.getAttribute('data-index');
+    setFieldsValue({
+      [`radio-group${radioGroupIndex}`]: undefined
+    });
   }
-
-  handleChangeRadio = e => {
-    console.log(e.target.value);
-    console.log(e.target);
-    e.target.disabled = true;
-    console.log(e.target);
-  }
-
-
 
   render() {
     const { getFieldDecorator, getFieldValue } = this.props.form;
-    
-    const formItemLayout = {
-      wrapperCol: {
-        xs: { span: 24, offset: 0 },
-        sm: { span: 12, offset: 6 },
-      },
-    };
-    getFieldDecorator('keys', { initialValue: [] });
-    const keys = getFieldValue('keys');
-    const formItems = keys.map((k, index) => (
-      <Form.Item
-        {...(formItemLayout)}
-        required={false}
-        key={k}
-      >
-        {getFieldDecorator(`names[${k}]`, {
-          validateTrigger: ['onBlur'],
-          rules: [
-            {
-              required: true,
-              pattern: new RegExp("^[0-9]*[02468]$"),
-              message: "Solo números pares."
-            }
-          ],
-        })(<InputNumber  placeholder={`Number ${index + 1}`} style={{ width: '100%', marginRight: 8 }} />)}
-        {
-          <Fragment>
-            <Radio.Group onChange={this.handleChangeRadio} buttonStyle="solid" style={{width:'100%'}}>
-              <Radio.Button disabled={false} style={{width: '33.33%', textAlign: 'center'}} value="plus">Sumar</Radio.Button>
-              <Radio.Button disabled={false} style={{width: '33.33%', textAlign: 'center'}} value="substract">Restar</Radio.Button>
-              <Radio.Button disabled={false} style={{width: '33.33%', textAlign: 'center'}} value="multiply">Multiplicar</Radio.Button>
-            </Radio.Group>
-          </Fragment>
-        }
-      </Form.Item>
-    ));
+    const { totalOperation } = this.state;
+    let newnumbers = [];
 
-    
-    const rightItems = keys.map((k, index) => (
-      <Form.Item
-        {...(formItemLayout)}
-        required={false}
-        key={k}
-      >
-        {getFieldDecorator(`names[${k}]`, {
-          validateTrigger: ['onBlur'],
-          rules: [
-            {
-              required: true,
-              pattern: new RegExp("^[0-9]*[02468]$"),
-              message: "Solo números pares."
-            }
-          ],
-        })(<InputNumber  placeholder={`Number ${index + 1}`} style={{ width: '90%', marginRight: 8 }} />)}
-        {
-          <Icon
-              className="dynamic-delete-button"
-              type="minus-circle-o"
-              onClick={() => this.remove(k)}
-          />
-        }
-      </Form.Item>
-    ));
+    getFieldDecorator("newnumbers", { initialValue: [] });
+    newnumbers = getFieldValue("newnumbers");
+
+    const numbersRightItems = newnumbers.map((k, index) => {
+      const disabledRadioGroup = getFieldValue(`radio-group${k}`);
+      if(disabledRadioGroup){
+        const numberLeft = getFieldValue(`number${k}`);
+        return (
+          <Fragment key={k}>
+            <FormItem>
+              {getFieldDecorator("number-right" + k, {
+              })(<Input disabled placeholder={`${numberLeft}`} />)}
+            </FormItem>
+            <FormItem>
+              <Button block type="danger" data-index={k} onClick={this.handleClickRemoveNumberRight}>
+                Eliminar
+              </Button>
+            </FormItem>
+          </Fragment>
+        )
+      }
+    })
+
+    const numbersItems = newnumbers.map((k, index) => {
+      const actualRadioGroup = getFieldValue(`radio-group${k}`);
+      let disabledAll = false;
+      if (actualRadioGroup){
+        disabledAll = true;
+      }
+
+      return (
+        <Fragment key={k}>
+          <FormItem>
+            {getFieldDecorator("number" + k, {
+              validateTrigger: ['onBlur'],
+              rules: [
+                {
+                  required: true,
+                  pattern: new RegExp("^[0-9]*[02468]$"),
+                  message: "Solo números pares."
+                }
+              ],
+            })(<Input disabled={disabledAll} placeholder={`Number ${k + 1 }`} />)}
+          </FormItem>
+          <FormItem>
+            {getFieldDecorator("radio-group" + k, {
+            })(
+              <Radio.Group disabled={disabledAll} buttonStyle="solid" style={{width: '100%'}}>
+                <Radio.Button value="1" className="text-center" style={{width: '33.3%'}}>Sumar</Radio.Button>
+                <Radio.Button value="2" className="text-center" style={{width: '33.3%'}}>Restar</Radio.Button>
+                <Radio.Button value="3" className="text-center" style={{width: '33.3%'}}>Multiplicar</Radio.Button>
+              </Radio.Group>
+            )}
+          </FormItem>
+        </Fragment>
+      );
+    });
+
     return (
-      <Fragment>
-        <Row type="flex" justify="start" align="start">
+      <Form onSubmit={this.handleSubmit}>
+        <Row type="flex" justify="center">
           <Col span={24}>
             <h1 className="text-center">Exercise three - CYT</h1>
           </Col>
-          <Col span={24}>
-            <Form onSubmit={this.handleSubmit} onChange={this.handleChange}>
-              <Col xs={24} md={12}>
-                {formItems}
-              </Col>
-              <Col xs={24} md={12}>
-                {rightItems}
-              </Col>
-
-              <Col span={24}>
-                <Form.Item {...formItemLayout}>
-                  <Button block type="dashed" onClick={this.add} >
-                    <Icon type="plus" /> Add number.
-                  </Button>
-                </Form.Item>
-                <Form.Item {...formItemLayout}>
-                  <Button type="primary" htmlType="submit">
-                    Submit
-                  </Button>
-                </Form.Item>
-              </Col>
-            </Form>
+        </Row>
+        <Row type="flex" justify="center" gutter={20}>
+          <Col xs={24} md={{ span:10, offset: 1 }}>
+            {numbersItems}
+          </Col>
+          <Col xs={24} md={{ span:10 }}>
+            {numbersRightItems}
           </Col>
         </Row>
-      </Fragment>
+        <Row type="flex" justify="center">
+          <Col span={12}>
+            <FormItem>
+              <Button block type="dashed" onClick={this.addNumber}>
+                <Icon type="plus" /> Add number
+              </Button>
+            </FormItem>
+          </Col>
+        </Row>
+        <Row type="flex" justify="center">
+          <Col span={12}>
+            <FormItem>
+              <Button block type="primary" htmlType="submit">
+                Submit
+              </Button>
+            </FormItem>
+          </Col>
+        </Row>
+        {
+          totalOperation !== null
+          ? (
+            <Row type="flex" justify="center">
+              <Col span={24}>
+                <p className="text-center" style={{fontSize: '2.4em'}}>
+                  Tu total es: {totalOperation}
+                </p>
+              </Col>
+            </Row>
+          )
+          : null
+        }
+      </Form>
     );
   }
 }
 
-const WrappedApp = Form.create({ name: 'dynamic_form_item' })(App);
-
+const WrappedApp = Form.create()(App);
 export default WrappedApp;
