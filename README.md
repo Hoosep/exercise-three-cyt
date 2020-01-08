@@ -1,9 +1,8 @@
 # Project unfinished
 
-### `npm start`
+# exercise-two-cyt
+You must install all dependencies from root directory and client folder.
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Once executed, you must run next command: npm start.
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+You need to press "Add number" button and add N random numbers. Add a number a press an operation what you want. If it's necessary, you can remove an operation or number from that element. When you finish of add numbers, press 'Submit' button and get the total of your operation.
